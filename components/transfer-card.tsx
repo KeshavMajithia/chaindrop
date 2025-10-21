@@ -7,12 +7,13 @@ interface TransferCardProps {
   transferId: string
   fileName: string
   fileSize: string
-  status: "pending" | "uploading" | "completed" | "expired"
+  status: "pending" | "connecting" | "waiting" | "transferring" | "completed" | "failed" | "expired"
   progress?: number
+  speed?: number
   expiresIn?: string
 }
 
-export function TransferCard({ transferId, fileName, fileSize, status, progress = 0, expiresIn }: TransferCardProps) {
+export function TransferCard({ transferId, fileName, fileSize, status, progress = 0, speed, expiresIn }: TransferCardProps) {
   const [copied, setCopied] = useState(false)
 
   const copyToClipboard = () => {
@@ -23,8 +24,11 @@ export function TransferCard({ transferId, fileName, fileSize, status, progress 
 
   const statusColors = {
     pending: "bg-muted/50 text-muted-foreground",
-    uploading: "bg-primary/20 text-primary",
-    completed: "bg-secondary/20 text-secondary",
+    connecting: "bg-blue-500/20 text-blue-500",
+    waiting: "bg-yellow-500/20 text-yellow-500",
+    transferring: "bg-primary/20 text-primary",
+    completed: "bg-green-500/20 text-green-500",
+    failed: "bg-red-500/20 text-red-500",
     expired: "bg-destructive/20 text-destructive",
   }
 
@@ -40,7 +44,7 @@ export function TransferCard({ transferId, fileName, fileSize, status, progress 
         </span>
       </div>
 
-      {status === "uploading" && (
+      {status === "transferring" && (
         <div className="space-y-2">
           <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
             <div
@@ -48,7 +52,30 @@ export function TransferCard({ transferId, fileName, fileSize, status, progress 
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground text-right">{progress}%</p>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{progress}%</span>
+            {speed && (
+              <span>{(speed / 1024 / 1024).toFixed(2)} MB/s</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {status === "waiting" && (
+        <div className="text-center py-2">
+          <div className="animate-pulse text-yellow-500 mb-1">
+            <div className="w-4 h-4 mx-auto border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-xs text-muted-foreground">Waiting for receiver...</p>
+        </div>
+      )}
+
+      {status === "connecting" && (
+        <div className="text-center py-2">
+          <div className="animate-pulse text-blue-500 mb-1">
+            <div className="w-4 h-4 mx-auto border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-xs text-muted-foreground">Connecting...</p>
         </div>
       )}
 

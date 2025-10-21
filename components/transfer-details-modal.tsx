@@ -1,8 +1,8 @@
 "use client"
 
-import { X, Copy, Share2 } from "lucide-react"
-import { useEffect } from "react"
-import QRCode from "qrcode"
+import { X, Copy, Share2, Download } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { QRCodeSVG } from "qrcode.react"
 
 interface TransferDetailsModalProps {
   isOpen: boolean
@@ -11,15 +11,18 @@ interface TransferDetailsModalProps {
     id: string
     fileName: string
     fileSize: string
-    status: "completed" | "pending" | "expired"
-    uploadedAt: string
-    downloads: number
+    status: "pending" | "connecting" | "waiting" | "transferring" | "completed" | "failed" | "expired"
+    uploadedAt?: string
+    downloads?: number
     recipient?: string
     expiresIn?: string
   }
 }
 
 export function TransferDetailsModal({ isOpen, onClose, transfer }: TransferDetailsModalProps) {
+  const [qrSize, setQrSize] = useState(200)
+  const qrRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden"
@@ -31,23 +34,43 @@ export function TransferDetailsModal({ isOpen, onClose, transfer }: TransferDeta
     }
   }, [isOpen])
 
+  // Calculate responsive QR code size
   useEffect(() => {
-    if (isOpen) {
-      const canvas = document.getElementById("qr-code-canvas") as HTMLCanvasElement
-      if (canvas) {
-        const link = `${window.location.origin}/receive/${transfer.id}`
-        QRCode.toCanvas(canvas, link, { width: 200 }, (error) => {
-          if (error) console.error("QR Code generation error:", error)
-        })
+    const updateQrSize = () => {
+      if (qrRef.current) {
+        const containerWidth = qrRef.current.offsetWidth
+        const newSize = Math.min(containerWidth - 40, 300) // Max 300px, with 20px padding on each side
+        setQrSize(Math.max(newSize, 150)) // Min 150px
       }
     }
-  }, [isOpen, transfer.id])
+
+    if (isOpen) {
+      updateQrSize()
+      window.addEventListener('resize', updateQrSize)
+      return () => window.removeEventListener('resize', updateQrSize)
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
+  const transferLink = `${window.location.origin}/receive/${transfer.id}`
+
   const handleCopyLink = () => {
-    const link = `${window.location.origin}/receive/${transfer.id}`
-    navigator.clipboard.writeText(link)
+    navigator.clipboard.writeText(transferLink)
+  }
+
+  const handleDownloadQR = () => {
+    const svg = document.querySelector('#qr-code svg') as SVGElement
+    if (svg) {
+      const svgData = new XMLSerializer().serializeToString(svg)
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+      const url = URL.createObjectURL(svgBlob)
+      const link = document.createElement('a')
+      link.download = `chaindrop-transfer-${transfer.id}.svg`
+      link.href = url
+      link.click()
+      URL.revokeObjectURL(url)
+    }
   }
 
   return (
@@ -94,11 +117,11 @@ export function TransferDetailsModal({ isOpen, onClose, transfer }: TransferDeta
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Uploaded</p>
-                <p className="text-foreground font-medium text-sm">{transfer.uploadedAt}</p>
+                <p className="text-foreground font-medium text-sm">{transfer.uploadedAt || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Downloads</p>
-                <p className="text-foreground font-medium">{transfer.downloads}</p>
+                <p className="text-foreground font-medium">{transfer.downloads ?? 0}</p>
               </div>
             </div>
             {transfer.recipient && (
@@ -115,9 +138,45 @@ export function TransferDetailsModal({ isOpen, onClose, transfer }: TransferDeta
             )}
           </div>
 
-          <div className="glass-dark rounded-lg p-4 flex flex-col items-center">
-            <p className="text-xs text-muted-foreground mb-3">Share via QR Code</p>
-            <canvas id="qr-code-canvas" className="bg-white p-2 rounded" />
+          <div className="glass-dark rounded-lg p-6 flex flex-col items-center space-y-4">
+            <div className="text-center">
+              <p className="text-sm font-medium text-foreground mb-1">Share via QR Code</p>
+              <p className="text-xs text-muted-foreground">Scan to receive the file</p>
+            </div>
+            
+            <div 
+              ref={qrRef}
+              className="relative p-4 bg-white rounded-xl shadow-lg animate-qr-appear animate-qr-glow"
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                padding: '4px'
+              }}
+            >
+              <div className="bg-white rounded-lg p-3">
+                <div id="qr-code" className="animate-fadeInUp">
+                  <QRCodeSVG
+                    value={transferLink}
+                    size={qrSize}
+                    level="M"
+                    includeMargin={true}
+                    style={{
+                      width: '100%',
+                      height: '100%'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={handleDownloadQR}
+                className="flex items-center gap-2 px-3 py-2 glass rounded-lg text-sm font-medium text-foreground hover:bg-primary/30 transition-all"
+              >
+                <Download className="w-4 h-4" />
+                Download QR
+              </button>
+            </div>
           </div>
         </div>
 

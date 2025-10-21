@@ -19,16 +19,6 @@ interface DashboardTransfer {
   expiresIn?: string
 }
 
-const chartData = [
-  { date: "Mon", transfers: 4, downloads: 24 },
-  { date: "Tue", transfers: 3, downloads: 18 },
-  { date: "Wed", transfers: 5, downloads: 32 },
-  { date: "Thu", transfers: 2, downloads: 14 },
-  { date: "Fri", transfers: 6, downloads: 42 },
-  { date: "Sat", transfers: 4, downloads: 28 },
-  { date: "Sun", transfers: 3, downloads: 20 },
-]
-
 export default function DashboardPage() {
   const [transfers, setTransfers] = useState<DashboardTransfer[]>([])
   const [selectedTransfers, setSelectedTransfers] = useState<string[]>([])
@@ -39,6 +29,33 @@ export default function DashboardPage() {
     const storedTransfers = getTransfers()
     setTransfers(storedTransfers as DashboardTransfer[])
   }, [])
+
+  // Calculate chart data from actual transfers
+  const chartData = (() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() - (6 - i))
+      return {
+        date: days[date.getDay()],
+        fullDate: date.toDateString(),
+        transfers: 0,
+        downloads: 0
+      }
+    })
+
+    // Group transfers by day
+    transfers.forEach(transfer => {
+      const transferDate = new Date(transfer.uploadedAt).toDateString()
+      const dayData = last7Days.find(d => d.fullDate === transferDate)
+      if (dayData) {
+        dayData.transfers++
+        dayData.downloads += transfer.downloads
+      }
+    })
+
+    return last7Days.map(({ date, transfers, downloads }) => ({ date, transfers, downloads }))
+  })()
 
   const handleDelete = (id: string) => {
     deleteTransfer(id)
@@ -107,7 +124,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header walletConnected={true} walletAddress="0x1234567890abcdef" />
+      <Header walletConnected={false} />
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 py-12">
@@ -145,12 +162,16 @@ export default function DashboardPage() {
                   <XAxis dataKey="date" stroke="rgba(255,255,255,0.7)" />
                   <YAxis stroke="rgba(255,255,255,0.7)" />
                   <Tooltip
+                    cursor={{ fill: "transparent" }}
                     contentStyle={{
-                      backgroundColor: "rgba(20, 20, 40, 0.9)",
-                      border: "1px solid rgba(139, 92, 246, 0.5)",
+                      backgroundColor: "rgba(10, 10, 30, 0.95)",
+                      backdropFilter: "blur(10px)",
+                      border: "1px solid rgba(139, 92, 246, 0.3)",
                       borderRadius: "8px",
+                      color: "rgba(255,255,255,0.9)"
                     }}
                     labelStyle={{ color: "rgba(255,255,255,0.9)" }}
+                    itemStyle={{ color: "rgba(0, 217, 255, 1)" }}
                   />
                   <Bar dataKey="transfers" fill="#00d9ff" radius={[8, 8, 0, 0]} />
                 </BarChart>
@@ -165,12 +186,16 @@ export default function DashboardPage() {
                   <XAxis dataKey="date" stroke="rgba(255,255,255,0.7)" />
                   <YAxis stroke="rgba(255,255,255,0.7)" />
                   <Tooltip
+                    cursor={{ stroke: "transparent" }}
                     contentStyle={{
-                      backgroundColor: "rgba(20, 20, 40, 0.9)",
-                      border: "1px solid rgba(139, 92, 246, 0.5)",
+                      backgroundColor: "rgba(10, 10, 30, 0.95)",
+                      backdropFilter: "blur(10px)",
+                      border: "1px solid rgba(139, 92, 246, 0.3)",
                       borderRadius: "8px",
+                      color: "rgba(255,255,255,0.9)"
                     }}
                     labelStyle={{ color: "rgba(255,255,255,0.9)" }}
+                    itemStyle={{ color: "rgba(217, 70, 239, 1)" }}
                   />
                   <Line type="monotone" dataKey="downloads" stroke="#d946ef" strokeWidth={3} dot={false} />
                 </LineChart>
