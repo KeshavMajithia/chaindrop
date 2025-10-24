@@ -454,12 +454,12 @@ export default function ReceivePage({ params }: { params: Promise<{ transferId: 
                 <span className="font-semibold text-foreground capitalize">{transferState.status}</span>
               </div>
               {transferState.speed > 0 && (
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Speed</span>
                   <span className="font-semibold text-foreground">
                     {(transferState.speed / 1024 / 1024).toFixed(2)} MB/s
                   </span>
-                </div>
+              </div>
               )}
             </div>
 
@@ -482,7 +482,7 @@ export default function ReceivePage({ params }: { params: Promise<{ transferId: 
                 }
 
                 return hasEncryptionKey ? (
-                  <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3">
                     <div className="relative">
                       <Lock className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                       {transferState.status === 'receiving' && (
@@ -504,11 +504,11 @@ export default function ReceivePage({ params }: { params: Promise<{ transferId: 
                 ) : (
                   <div className="flex items-start gap-3 bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-3">
                     <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <div>
+                <div>
                       <p className="font-semibold text-yellow-500 text-sm">⚠️ No Encryption Key</p>
                       <p className="text-xs text-muted-foreground">This transfer link is missing the encryption key. The file may not be encrypted.</p>
-                    </div>
-                  </div>
+                </div>
+              </div>
                 )
               })()}
               
@@ -535,16 +535,16 @@ export default function ReceivePage({ params }: { params: Promise<{ transferId: 
             </div>
           ) : transferState.status === 'receiving' ? (
             <div className="space-y-4">
-              <div className="glass rounded-xl p-6 space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="glass rounded-xl p-6 space-y-4">
+                  <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Receiving file...</span>
                   <span className="text-sm text-muted-foreground">{Math.round(transferState.progress)}%</span>
-                </div>
-                <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-primary to-accent h-full transition-all duration-300"
+                  </div>
+                  <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-primary to-accent h-full transition-all duration-300"
                     style={{ width: `${transferState.progress}%` }}
-                  />
+                    />
                 </div>
                 {transferState.speed > 0 && (
                   <div className="text-xs text-muted-foreground text-center">
